@@ -2,15 +2,18 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>指尖微奢藝術 - 智慧語音迎賓看板</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>純日式職人美甲 - 智慧迎賓看板</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             margin: 0;
             padding: 0;
             background-color: #0d0d0d;
             color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -19,74 +22,57 @@
             text-align: center;
         }
         .container {
-            width: 85%;
-            max-width: 850px;
-            padding: 60px 40px;
-            border-radius: 24px;
-            background: rgba(20, 20, 20, 0.9);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+            width: 90%;
+            max-width: 900px;
+            padding: 50px 30px;
+            border-radius: 20px;
+            background: rgba(22, 22, 22, 0.95);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
             border: 1px solid #333;
             transition: all 0.5s ease;
         }
+        /* 常態廣告風格（精準控制字體大小，絕不醜陋斷行） */
         .normal-ad h1 {
-            font-size: 3.2rem;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
             color: #d4af37;
             margin-bottom: 20px;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
+            font-weight: 500;
         }
         .normal-ad p {
-            font-size: 1.6rem;
+            font-size: clamp(1rem, 2vw, 1.4rem);
             color: #aaa;
-            line-height: 1.6;
+            line-height: 1.8;
+            margin: 10px 0;
         }
+        /* 互動歡迎風格 */
         .welcome-box h1 {
-            font-size: 3.5rem;
+            font-size: clamp(2rem, 4.5vw, 3.2rem);
             color: #ffb74d;
             margin-bottom: 20px;
+            font-weight: 600;
         }
         .welcome-box p {
-            font-size: 1.7rem;
+            font-size: clamp(1.1rem, 2.2vw, 1.6rem);
             color: #fff;
-            line-height: 1.7;
+            line-height: 1.8;
+            margin: 10px 0;
         }
-        /* 為了方便測試，我們把鏡頭畫面縮小放在畫面上方角落，確認它有在運作 */
-        #webcam {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            width: 80px;
-            height: 60px;
-            border: 2px solid #d4af37;
-            border-radius: 8px;
-            z-index: 999;
-            object-fit: cover;
-        }
-        /* 數值除錯框 */
-        #debugInfo {
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #888;
-            font-size: 14px;
-            background: rgba(0,0,0,0.8);
-            padding: 5px 15px;
-            border-radius: 20px;
+        #webcam, #debugInfo {
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <!-- 顯示縮小的攝影機畫面，確保手機有成功啟動鏡頭 -->
     <video id="webcam" autoplay playsinline muted></video>
-
-    <!-- 除錯數值顯示 -->
-    <div id="debugInfo">相機初始化中...</div>
+    <div id="debugInfo">動態感應中...</div>
 
     <div class="container" id="displayBox">
         <div class="normal-ad">
-            <h1>✨ 指尖上的微奢藝術</h1>
-            <p>日韓精緻手繪 ｜ 專屬您的美甲訂製空間<br><span style="font-size: 1.2rem; color: #666;">— 讓美麗，在指尖溫柔綻放 —</span></p>
+            <h1>✨ 日本留學・純日式指尖美學</h1>
+            <p>日本正統沙龍技術 ｜ 專屬您的細緻美甲訂製空間</p>
+            <p style="font-size: 0.95rem; color: #666; letter-spacing: 1px;">— 講究的職人手作，溫柔綻放 —</p>
         </div>
     </div>
 
@@ -97,22 +83,18 @@
         let lastState = "normal";
         let noMotionTimer = null;
 
-        // 1. 強制啟動相機
         navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
             .then(stream => {
                 video.srcObject = stream;
                 video.play();
-                debugInfo.innerText = "相機已啟動，請在鏡頭前揮手";
                 requestAnimationFrame(detectMotion);
             })
             .catch(err => {
                 console.log("相機啟用失敗: ", err);
-                debugInfo.innerText = "相機權限被拒絕或不支援！";
-                alert("無法啟動相機，請檢查瀏覽器權限！");
             });
 
         const canvas = document.createElement('canvas');
-        canvas.width = 160;   // 降低解析度以加快運算
+        canvas.width = 160;
         canvas.height = 120;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         let prevData = null;
@@ -128,11 +110,7 @@
                         diffSum += Math.abs(currData[i] - prevData[i]);
                     }
 
-                    // 即時在下方顯示當前數值
-                    debugInfo.innerText = `動態感應值: ${Math.floor(diffSum)} (觸發門檻: 100000)`;
-
-                    // 降低門檻到 100,000 讓輕微揮手就能觸發
-                    if (diffSum > 100000) { 
+                    if (diffSum > 200000) { 
                         triggerWelcome();
                     }
                 }
@@ -146,7 +124,7 @@
         function speakWelcome() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance("歡迎光臨！請稍坐休息，我們馬上為您服務。");
+                const utterance = new SpeechSynthesisUtterance("いらっしゃいませ！歡迎光臨，請稍坐休息，我們馬上為您服務。");
                 utterance.lang = 'zh-TW';
                 utterance.rate = 1.0;
                 utterance.pitch = 1.1;
@@ -160,8 +138,9 @@
                 speakWelcome();
                 displayBox.innerHTML = `
                     <div class="welcome-box">
-                        <h1>👋 歡迎光臨！</h1>
-                        <p>美甲師正在為貴賓服務中<br>請先稍坐休息，或參觀桌上最新色卡與款式靈感 ✨<br><span style="color: #f1c40f; font-size: 1.3rem;">💡 新客預約指定款，享專屬質感優惠！</span></p>
+                        <h1>✨ いらっしゃいませ 歡迎光臨！</h1>
+                        <p>美甲師正在為貴賓進行正統日式服務中<br>請先稍坐片刻，參觀桌上日本直送色卡與精緻款式 ✨</p>
+                        <p style="color: #f1c40f; font-size: 1.2rem; margin-top: 15px;">💡 新客預約日式指定款，享專屬職人禮遇！</p>
                     </div>
                 `;
                 displayBox.style.borderColor = "#d4af37";
@@ -172,8 +151,9 @@
                 lastState = "normal";
                 displayBox.innerHTML = `
                     <div class="normal-ad">
-                        <h1>✨ 指尖上的微奢藝術</h1>
-                        <p>日韓精緻手繪 ｜ 專屬您的美甲訂製空間<br><span style="font-size: 1.2rem; color: #666;">— 讓美麗，在指尖溫柔綻放 —</span></p>
+                        <h1>✨ 日本留學・純日式指尖美學</h1>
+                        <p>日本正統沙龍技術 ｜ 專屬您的細緻美甲訂製空間</p>
+                        <p style="font-size: 0.95rem; color: #666; letter-spacing: 1px;">— 講究的職人手作，溫柔綻放 —</p>
                     </div>
                 `;
                 displayBox.style.borderColor = "#333";
