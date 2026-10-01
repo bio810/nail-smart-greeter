@@ -10,7 +10,7 @@
             padding: 0;
             background-color: #0d0d0d;
             color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -28,10 +28,9 @@
             border: 1px solid #333;
             transition: all 0.5s ease;
         }
-        /* 常態廣告風格（平時質感輪播） */
         .normal-ad h1 {
             font-size: 3.2rem;
-            color: #d4af37; /* 質感金 */
+            color: #d4af37;
             margin-bottom: 20px;
             letter-spacing: 3px;
         }
@@ -40,42 +39,49 @@
             color: #aaa;
             line-height: 1.6;
         }
-        /* 互動歡迎風格（有人靠近時的暖心招呼） */
         .welcome-box h1 {
             font-size: 3.5rem;
             color: #ffb74d;
             margin-bottom: 20px;
-            animation: fadeInDown 0.4s ease;
         }
         .welcome-box p {
             font-size: 1.7rem;
             color: #fff;
             line-height: 1.7;
-            animation: fadeInUp 0.4s ease;
         }
-        /* 隱藏式感應鏡頭 */
+        /* 為了方便測試，我們把鏡頭畫面縮小放在畫面上方角落，確認它有在運作 */
         #webcam {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 1px;
-            height: 1px;
-            opacity: 0.01;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 80px;
+            height: 60px;
+            border: 2px solid #d4af37;
+            border-radius: 8px;
+            z-index: 999;
+            object-fit: cover;
         }
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* 數值除錯框 */
+        #debugInfo {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #888;
+            font-size: 14px;
+            background: rgba(0,0,0,0.8);
+            padding: 5px 15px;
+            border-radius: 20px;
         }
     </style>
 </head>
 <body>
 
-    <!-- 隱藏的攝影機串流，在背景靜靜幫忙感應人影 -->
+    <!-- 顯示縮小的攝影機畫面，確保手機有成功啟動鏡頭 -->
     <video id="webcam" autoplay playsinline muted></video>
+
+    <!-- 除錯數值顯示 -->
+    <div id="debugInfo">相機初始化中...</div>
 
     <div class="container" id="displayBox">
         <div class="normal-ad">
@@ -87,25 +93,27 @@
     <script>
         const video = document.getElementById('webcam');
         const displayBox = document.getElementById('displayBox');
+        const debugInfo = document.getElementById('debugInfo');
         let lastState = "normal";
         let noMotionTimer = null;
 
-        // 1. 啟動前鏡頭進行感應
+        // 1. 強制啟動相機
         navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
             .then(stream => {
                 video.srcObject = stream;
                 video.play();
+                debugInfo.innerText = "相機已啟動，請在鏡頭前揮手";
                 requestAnimationFrame(detectMotion);
             })
             .catch(err => {
                 console.log("相機啟用失敗: ", err);
-                alert("請點擊允許相機權限，智慧語音迎賓看板才能正常運作喔！");
+                debugInfo.innerText = "相機權限被拒絕或不支援！";
+                alert("無法啟動相機，請檢查瀏覽器權限！");
             });
 
-        // 2. 建立像素比對畫布
         const canvas = document.createElement('canvas');
-        canvas.width = 320;
-        canvas.height = 240;
+        canvas.width = 160;   // 降低解析度以加快運算
+        canvas.height = 120;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         let prevData = null;
 
@@ -116,47 +124,40 @@
 
                 if (prevData) {
                     let diffSum = 0;
-                    // 抽樣比對畫面差異
-                    for (let i = 0; i < currData.length; i += 40) {
+                    for (let i = 0; i < currData.length; i += 20) {
                         diffSum += Math.abs(currData[i] - prevData[i]);
                     }
 
-                    // 感應門檻（可依現場環境微調數值）
-                    if (diffSum > 1500000) { 
+                    // 即時在下方顯示當前數值
+                    debugInfo.innerText = `動態感應值: ${Math.floor(diffSum)} (觸發門檻: 100000)`;
+
+                    // 降低門檻到 100,000 讓輕微揮手就能觸發
+                    if (diffSum > 100000) { 
                         triggerWelcome();
                     }
                 }
                 prevData = currData;
             }
-            // 每秒執行約 5 次檢查，順暢且不耗效能
             setTimeout(() => {
                 requestAnimationFrame(detectMotion);
-            }, 200);
+            }, 250);
         }
 
-        // 3. 語音朗讀函式
         function speakWelcome() {
             if ('speechSynthesis' in window) {
-                // 如果正在說話則先打斷，確保聲音即時
                 window.speechSynthesis.cancel();
-                
                 const utterance = new SpeechSynthesisUtterance("歡迎光臨！請稍坐休息，我們馬上為您服務。");
-                utterance.lang = 'zh-TW'; // 設定為台灣繁體中文語系
-                utterance.rate = 1.0;   // 語速 (1.0 為正常速度)
-                utterance.pitch = 1.1;  // 音調稍微微調，聽起來更親切溫柔
-                
+                utterance.lang = 'zh-TW';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.1;
                 window.speechSynthesis.speak(utterance);
             }
         }
 
-        // 觸發暖心迎賓畫面與語音
         function triggerWelcome() {
             if (lastState !== "welcome") {
                 lastState = "welcome";
-                
-                // 播放語音招呼
                 speakWelcome();
-
                 displayBox.innerHTML = `
                     <div class="welcome-box">
                         <h1>👋 歡迎光臨！</h1>
@@ -167,8 +168,6 @@
             }
 
             clearTimeout(noMotionTimer);
-            
-            // 當客人離開或沒有動作滿 6 秒後，自動切回常態廣告
             noMotionTimer = setTimeout(() => {
                 lastState = "normal";
                 displayBox.innerHTML = `
