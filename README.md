@@ -1,2 +1,2 @@
 #nail-smart-greeter
-迎賓語音看版
+# 迎賓語音看版
