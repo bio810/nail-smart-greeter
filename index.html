@@ -31,7 +31,6 @@
             border: 1px solid #333;
             transition: all 0.5s ease;
         }
-        /* 常態廣告風格（精準控制字體大小，絕不醜陋斷行） */
         .normal-ad h1 {
             font-size: clamp(1.8rem, 4vw, 2.8rem);
             color: #d4af37;
@@ -45,7 +44,6 @@
             line-height: 1.8;
             margin: 10px 0;
         }
-        /* 互動歡迎風格 */
         .welcome-box h1 {
             font-size: clamp(2rem, 4.5vw, 3.2rem);
             color: #ffb74d;
@@ -124,7 +122,8 @@
         function speakWelcome() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance("いらっしゃいませ！歡迎光臨，請稍坐休息，我們馬上為您服務。");
+                // 改用標準、溫柔的中文語音，聽起來舒服且專業
+                const utterance = new SpeechSynthesisUtterance("歡迎光臨正統日式美學，請稍坐休息，我們馬上為您服務。");
                 utterance.lang = 'zh-TW';
                 utterance.rate = 1.0;
                 utterance.pitch = 1.1;
