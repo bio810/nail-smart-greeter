@@ -15,6 +15,7 @@
             color: #fff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -22,39 +23,54 @@
             text-align: center;
         }
         .container {
-            width: 90%;
-            max-width: 900px;
-            padding: 50px 30px;
+            width: 92%;
+            max-width: 850px;
+            padding: 40px 20px;
             border-radius: 20px;
             background: rgba(22, 22, 22, 0.95);
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
             border: 1px solid #333;
             transition: all 0.5s ease;
         }
+        /* 優化標題排版，避免手機窄螢幕斷行難看 */
         .normal-ad h1 {
-            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-size: clamp(1.5rem, 5vw, 2.4rem);
             color: #d4af37;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
             font-weight: 500;
+            white-space: nowrap; /* 強制不斷行，保持精緻 */
         }
         .normal-ad p {
-            font-size: clamp(1rem, 2vw, 1.4rem);
+            font-size: clamp(0.95rem, 2.8vw, 1.3rem);
             color: #aaa;
-            line-height: 1.8;
-            margin: 10px 0;
+            line-height: 1.6;
+            margin: 8px 0;
         }
         .welcome-box h1 {
-            font-size: clamp(2rem, 4.5vw, 3.2rem);
+            font-size: clamp(1.8rem, 6vw, 2.8rem);
             color: #ffb74d;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             font-weight: 600;
         }
         .welcome-box p {
-            font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+            font-size: clamp(1rem, 3vw, 1.4rem);
             color: #fff;
-            line-height: 1.8;
-            margin: 10px 0;
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+        /* iOS 聲音解鎖按鈕樣式 */
+        #soundUnlockBtn {
+            margin-top: 20px;
+            background: #d4af37;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
         }
         #webcam, #debugInfo {
             display: none;
@@ -68,18 +84,35 @@
 
     <div class="container" id="displayBox">
         <div class="normal-ad">
-            <h1>✨ 日本留學・純日式指尖美學</h1>
+            <h1>✨ 日本留學・純日式美學</h1>
             <p>日本正統沙龍技術 ｜ 專屬您的細緻美甲訂製空間</p>
-            <p style="font-size: 0.95rem; color: #666; letter-spacing: 1px;">— 講究的職人手作，溫柔綻放 —</p>
+            <p style="font-size: 0.9rem; color: #666; letter-spacing: 1px;">— 講究的職人手作，溫柔綻放 —</p>
         </div>
     </div>
+
+    <!-- 解決 iPhone 聲音限制的解鎖按鈕 -->
+    <button id="soundUnlockBtn" onclick="unlockAudio()">🔊 點擊此處啟動語音迎賓</button>
 
     <script>
         const video = document.getElementById('webcam');
         const displayBox = document.getElementById('displayBox');
         const debugInfo = document.getElementById('debugInfo');
+        const soundUnlockBtn = document.getElementById('soundUnlockBtn');
         let lastState = "normal";
         let noMotionTimer = null;
+        let audioUnlocked = false;
+
+        // 點擊按鈕解鎖 iOS 語音權限
+        function unlockAudio() {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance("語音系統已啟動");
+                utterance.volume = 0; // 靜默測試解鎖
+                window.speechSynthesis.speak(utterance);
+                audioUnlocked = true;
+                soundUnlockBtn.style.display = 'none'; // 隱藏按鈕，畫面變乾淨
+                console.log("iOS 音訊已成功解鎖");
+            }
+        }
 
         navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
             .then(stream => {
@@ -120,9 +153,8 @@
         }
 
         function speakWelcome() {
-            if ('speechSynthesis' in window) {
+            if ('speechSynthesis' in window && audioUnlocked) {
                 window.speechSynthesis.cancel();
-                // 改用標準、溫柔的中文語音，聽起來舒服且專業
                 const utterance = new SpeechSynthesisUtterance("歡迎光臨正統日式美學，請稍坐休息，我們馬上為您服務。");
                 utterance.lang = 'zh-TW';
                 utterance.rate = 1.0;
@@ -139,7 +171,7 @@
                     <div class="welcome-box">
                         <h1>✨ いらっしゃいませ 歡迎光臨！</h1>
                         <p>美甲師正在為貴賓進行正統日式服務中<br>請先稍坐片刻，參觀桌上日本直送色卡與精緻款式 ✨</p>
-                        <p style="color: #f1c40f; font-size: 1.2rem; margin-top: 15px;">💡 新客預約日式指定款，享專屬職人禮遇！</p>
+                        <p style="color: #f1c40f; font-size: 1.1rem; margin-top: 10px;">💡 新客預約日式指定款，享專屬職人禮遇！</p>
                     </div>
                 `;
                 displayBox.style.borderColor = "#d4af37";
@@ -150,9 +182,9 @@
                 lastState = "normal";
                 displayBox.innerHTML = `
                     <div class="normal-ad">
-                        <h1>✨ 日本留學・純日式指尖美學</h1>
+                        <h1>✨ 日本留學・純日式美學</h1>
                         <p>日本正統沙龍技術 ｜ 專屬您的細緻美甲訂製空間</p>
-                        <p style="font-size: 0.95rem; color: #666; letter-spacing: 1px;">— 講究的職人手作，溫柔綻放 —</p>
+                        <p style="font-size: 0.9rem; color: #666; letter-spacing: 1px;">— 講究的職人手作，溫柔綻放 —</p>
                     </div>
                 `;
                 displayBox.style.borderColor = "#333";
