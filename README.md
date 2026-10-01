@@ -1,1 +1,1 @@
-# -nail-smart-greeter
+#nail-smart-greeter
